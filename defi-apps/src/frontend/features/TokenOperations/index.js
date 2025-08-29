@@ -1,18 +1,51 @@
 import { Button, Divider, Grid, Typography, useTheme, TextField } from '@mui/material';
+import {useState, useEffect, useCallback } from 'react';
+import { ethers } from 'ethers';
+import TokenABI from '../../contracts/SimpleDeFiToken.json';
+import TokenAddress from '../../contracts/SimpleDeFiToken-address.json';
+import { useWeb3React } from '@web3-react/core';
+import { localProvider } from '../../components/Wallet';  
 
 const TokenOperations = () => {
   const theme = useTheme();
+
+  const [totalSupply, setTotalSupply] = useState(0);
+  const [userBalance, setUserBalance] = useState(0);
+
+  const { account, active, library } = useWeb3React();
+
+  const getTotalSupply = useCallback(async() => {
+    try {
+      const contract = new ethers.Contract(TokenAddress.address, TokenABI.abi, localProvider);
+      const response = await contract.totalSupply();
+      setTotalSupply(ethers.utils.formatUnits(response, 18));
+    }
+    catch(err) {
+      console.error(err);
+    }
+  }, []);
+
+  const getUserBalance = useCallback(async() => {
+    try {
+      if(!active) return;
+      const contract = new ethers.Contract(TokenAddress.address, TokenABI.abi, library.getSigner());
+      const response = await contract.balanceOf(account);
+      setUserBalance(ethers.utils.formatUnits(response, 18));
+     } catch(err) {
+      console.error(err); 
+    }
+  }, [account, library, active]);
 
   return <>
     <Grid container spacing={2}>
       <Grid item xs={12}><Typography variant='h6'>Simple DeFi Token</Typography></Grid>
       <Grid item xs={6}>
         <Typography variant='h6'>Total Supply</Typography>
-        <Typography>Total Supply</Typography>
+        <Typography>{totalSupply}</Typography>
       </Grid>
       <Grid item xs={6}>
         <Typography variant='h6'>Your Balance</Typography>
-        <Typography>Your Balance</Typography>
+        <Typography>{userBalance}</Typography>
       </Grid>
     </Grid>
     <Divider sx={theme.component.divider} />

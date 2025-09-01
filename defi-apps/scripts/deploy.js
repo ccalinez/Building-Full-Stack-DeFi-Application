@@ -3,7 +3,7 @@ const path = require("path");
 
 // Define nombres
 const contractName = "SimpleDeFiToken";
-const network = "chain-11155111";
+const network = "chain-31337";
 
 // Leer la dirección del contrato desde el estado de Ignition
 const deploymentStatePath = path.resolve(__dirname, `../ignition/deployments/${network}/deployed_addresses.json`);

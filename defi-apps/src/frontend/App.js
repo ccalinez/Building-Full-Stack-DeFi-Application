@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import TokenOperations from './features/TokenOperations';
 import { getLibrary } from './components/Wallet';
 import { Web3ReactProvider } from '@web3-react/core';
+import {ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; 
 
 
 function App() {
@@ -19,6 +21,7 @@ function App() {
                   <Route path='/' element={<TokenOperations />} />
                 </Routes>
               </Layout>
+              <ToastContainer />
             </BrowserRouter>
           </ThemeProvider>
         </Web3ReactProvider>;

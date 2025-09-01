@@ -1,8 +1,7 @@
 import { Button, Divider, Grid, Typography, useTheme, TextField } from '@mui/material';
 import {useState, useEffect, useCallback } from 'react';
-import { ethers } from 'ethers';
-import TokenABI from '../../contracts/SimpleDeFiToken.json';
-import TokenAddress from '../../contracts/SimpleDeFiToken-address.json';
+import { Contract, formatUnits } from 'ethers';
+import Token from '../../contracts/SimpleDeFiToken.json';
 import { useWeb3React } from '@web3-react/core';
 import { localProvider } from '../../components/Wallet';  
 
@@ -16,25 +15,38 @@ const TokenOperations = () => {
 
   const getTotalSupply = useCallback(async() => {
     try {
-      const contract = new ethers.Contract(TokenAddress.address, TokenABI.abi, localProvider);
+      console.log(`Direccion contrato ${Token.address}`);
+      console.log('Provider network:', await localProvider.getNetwork());
+      console.log(`ABI ${JSON.stringify(Token.abi)}`);
+      
+
+      const contract = new Contract(Token.address, Token.abi, localProvider);
       const response = await contract.totalSupply();
-      setTotalSupply(ethers.utils.formatUnits(response, 18));
+      setTotalSupply(formatUnits(response, 18));
     }
     catch(err) {
       console.error(err);
     }
   }, []);
 
-  const getUserBalance = useCallback(async() => {
+  const getUserBalance = useCallback(async () => {
     try {
       if(!active) return;
-      const contract = new ethers.Contract(TokenAddress.address, TokenABI.abi, library.getSigner());
+      console.log(`Direccion contrato ${Token.address}`);
+      console.log(`ABI ${JSON.stringify(Token.abi)}`);
+      console.log('Signer network:', await library.getNetwork());
+      const contract = new Contract(Token.address, Token.abi, library.getSigner(account));
       const response = await contract.balanceOf(account);
-      setUserBalance(ethers.utils.formatUnits(response, 18));
+      setUserBalance(formatUnits(response, 18));
      } catch(err) {
       console.error(err); 
     }
   }, [account, library, active]);
+
+  useEffect(() => {
+    getUserBalance();
+    getTotalSupply();
+  },[getTotalSupply, getUserBalance]);
 
   return <>
     <Grid container spacing={2}>

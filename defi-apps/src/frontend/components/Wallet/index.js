@@ -2,7 +2,7 @@ import { Web3Provider } from "@ethersproject/providers";
 import { WalletConnectConnector} from "@web3-react/walletconnect-connector";
 import { InjectedConnector } from "@web3-react/injected-connector";
 import {Buffer} from "buffer";
-import { ethers } from "ethers";
+import { JsonRpcProvider } from "ethers";
 
 export const ETHEREUM_NETWORK_ID = 1;
 export const SEPOLIA_NETWORK_ID = 11155111;
@@ -23,7 +23,8 @@ export const getLibrary = (provider) => {
   return library;
 }
 
-export const localProvider = new ethers.providers.JsonRpcProvider(process.env.REACT_APP_LOCAL_PROVIDER_URL); 
+export const localProvider = new JsonRpcProvider(process.env.REACT_APP_LOCAL_PROVIDER_URL); 
+console.log(`sepolia property: ${process.env.REACT_APP_LOCAL_PROVIDER_URL}`);
 
 export const injectedConnector = new InjectedConnector({ supportedChainIds: 
     [ETHEREUM_NETWORK_ID, SEPOLIA_NETWORK_ID, LOCAL_NETWORK_ID] });

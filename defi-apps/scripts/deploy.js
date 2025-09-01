@@ -1,45 +1,35 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const { ethers } = require("hardhat");
-const fs = require('fs');
+const fs = require("fs");
+const path = require("path");
 
-function saveContractToFrontend(contract, name) {
-  const contractsDir = __dirname + "/../src/frontend/contracts";
+// Define nombres
+const contractName = "SimpleDeFiToken";
+const network = "chain-11155111";
 
-  if (!fs.existsSync(contractsDir)) {
-    fs.mkdirSync(contractsDir);
-  }
+// Leer la dirección del contrato desde el estado de Ignition
+const deploymentStatePath = path.resolve(__dirname, `../ignition/deployments/${network}/deployed_addresses.json`);
+const deploymentState = JSON.parse(fs.readFileSync(deploymentStatePath, "utf8"));
 
-  fs.writeFileSync(
-    contractsDir + `/${name}-address.json`,
-    JSON.stringify({ address: contract.address }, undefined, 2)
-  );
-
-  const contractArtifact = artifacts.readArtifactSync(name);
-
-  fs.writeFileSync(
-    contractsDir + `/${name}.json`,
-    JSON.stringify(contractArtifact, null, 2)
-  );
+const address = deploymentState[`SimpleDeFiTokenModule#${contractName}`];
+if (!address) {
+  throw new Error(`No se encontró el contrato ${contractName} en el estado de despliegue.`);
 }
 
-async function main() {
-  const [deployer] = await ethers.getSigners();
-  const tokenContractFactory = await ethers.getContractFactory("SimpleDeFiToken");
-  const token = await tokenContractFactory.deploy();
-  console.log("Simple DeFi Token Contract Address: ", token.address);
-  console.log("Deployer: ", deployer.address);
-  console.log("Deployer ETH balance: ", (await deployer.getBalance()).toString());
-  saveContractToFrontend(token, "SimpleDeFiToken");
-}
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Leer el ABI desde artifacts
+const artifactPath = path.resolve(__dirname, `../src/backend/artifacts/src/backend/contracts/${contractName}.sol/${contractName}.json`);
+const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+const abi = artifact.abi;
+
+// Guardar address + ABI en archivo JSON
+const output = {
+  address,
+  abi
+};
+
+const outputDir = path.resolve(__dirname, `../src/frontend/contracts`);
+fs.mkdirSync(outputDir, { recursive: true });
+
+const outputPath = path.join(outputDir, `${contractName}.json`);
+fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
+
+console.log(`✅ ABI y dirección guardados en: ${outputPath}`);

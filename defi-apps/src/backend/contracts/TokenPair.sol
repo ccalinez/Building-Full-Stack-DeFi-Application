@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/ITokenPair.sol";
+import "./interfaces/IPairFactory.sol";
 
 contract TokenPair is ITokenPair, ERC20, ReentrancyGuard  {
 
@@ -62,6 +63,7 @@ contract TokenPair is ITokenPair, ERC20, ReentrancyGuard  {
         uint256 balanceB = ERC20(tokenB).balanceOf(address(this));
         uint256 amountA = balanceA - _reserveA;
         uint256 amountB = balanceB - _reserveB; 
+        bool hasReward = _mintReward(_reserveA, _reserveB);
         uint256 _totalSupply = totalSupply(); // gas savings,
         if (_totalSupply == 0) {
             liquidity = Math.sqrt(amountA * amountB) - MINIMUM_LIQUIDITY;
@@ -72,12 +74,62 @@ contract TokenPair is ITokenPair, ERC20, ReentrancyGuard  {
         require(liquidity > 0, 'INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
         _setReserves(balanceA, balanceB);
+        if (hasReward) kLast = reserveA * reserveB;
         emit Mint(msg.sender, amountA, amountB);
     }
 
-    function burn(
-        address to
-    ) external override returns (uint256 amountA, uint256 amountB) {}
+    function _mintReward(uint256 _reserveA, uint256 _reserveB)
+        private
+        returns (bool hasReward){
+        address rewardTo = IPairFactory(factory).rewardTo();
+        hasReward = rewardTo != address(0);
+        uint256 _kLast = kLast; // gas savings
+        if (hasReward) {
+            if (_kLast != 0) {
+                uint256 rootK = Math.sqrt(_reserveA * _reserveB);
+                uint256 rootKLast = Math.sqrt(_kLast);
+                if (rootK > rootKLast) {
+                    uint256 liquidity = (totalSupply() * (rootK - rootKLast)) /
+                        (rootKLast + rootK * 9);
+                    if (liquidity > 0) _mint(rewardTo, liquidity);
+                }
+            }
+        } else if (_kLast != 0) {
+            kLast = 0;
+        }
+    }
+
+     function burn(address to)
+        external
+        nonReentrant
+        returns (uint256 amountA, uint256 amountB)
+    {
+        // Step 1: Calculate token amounts sent back to user
+        (uint256 _reserveA, uint256 _reserveB, ) = getReserves();
+        address _tokenA = tokenA;
+        address _tokenB = tokenB;
+        uint256 balance0 = IERC20(_tokenA).balanceOf(address(this));
+        uint256 balance1 = IERC20(_tokenB).balanceOf(address(this));
+        uint256 liquidity = balanceOf(address(this));
+
+        bool hasReward = _mintReward(_reserveA, _reserveB);
+        uint256 _totalSupply = totalSupply();
+        amountA = (liquidity * balance0) / _totalSupply;
+        amountB = (liquidity * balance1) / _totalSupply;
+        require(amountA > 0 && amountB > 0, "INSUFFICIENT_BURNING_LIQUIDITY");
+
+        // Step 2: Burn the LP tokens and send paired tokens
+        _burn(address(this), liquidity);
+        _safeTransfer(_tokenA, to, amountA);
+        _safeTransfer(_tokenB, to, amountB);
+
+        // Step 3: Set the reserves with token balances
+        balance0 = IERC20(_tokenA).balanceOf(address(this));
+        balance1 = IERC20(_tokenB).balanceOf(address(this));
+        _setReserves(balance0, balance1);
+        if (hasReward) kLast = reserveA * reserveB;
+        emit Burn(msg.sender, amountA, amountB, to);
+    }
 
     function swap(
         uint256 amountAOut,

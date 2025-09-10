@@ -179,8 +179,28 @@ contract TokenPair is ITokenPair, ERC20, ReentrancyGuard  {
         emit Swap(msg.sender, amountAIn, amountBIn, amountAOut, amountBOut, to);
     }
 
-    function skim(address to) external override {}
+    // Force balances to match reserves
+    function skim(address to) external nonReentrant {
+        address _tokenA = tokenA;
+        address _tokenB = tokenB;
+        _safeTransfer(
+            _tokenA,
+            to,
+            IERC20(_tokenA).balanceOf(address(this)) - reserveA
+        );
+        _safeTransfer(
+            _tokenB,
+            to,
+            IERC20(_tokenB).balanceOf(address(this)) - reserveB
+        );
+    }
 
-    function sync() external override {}
+    // Force reserves to match balances
+    function sync() external nonReentrant {
+        _setReserves(
+            IERC20(tokenA).balanceOf(address(this)),
+            IERC20(tokenB).balanceOf(address(this))
+        );
+    }
 
 }

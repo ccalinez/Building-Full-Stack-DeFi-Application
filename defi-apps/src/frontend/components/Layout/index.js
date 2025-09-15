@@ -14,6 +14,9 @@ const drawerWidth = 240;
 const navItems = [{
   title: 'Token Operations',
   link: '/'
+  }, {
+  title: 'Liquidity',
+  link: '/liquidity'
 }];
 const appName = 'DeFi Application';
 

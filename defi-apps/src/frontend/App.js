@@ -7,6 +7,7 @@ import { getLibrary } from './components/Wallet';
 import { Web3ReactProvider } from '@web3-react/core';
 import {ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; 
+import LiquidityRouter from './features/Liquidity/LiquidityRouter';
 
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path='/' element={<TokenOperations />} />
+                  <Route path='/liquidity' element={<LiquidityRouter />} />
                 </Routes>
               </Layout>
               <ToastContainer />

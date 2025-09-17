@@ -8,7 +8,7 @@ import "hardhat/console.sol";
  * @dev Very simple token that is used for demonstrating various of DeFi applications
  */
 contract SimpleDeFiToken is ERC20 {
-    constructor() ERC20("Simple DeFi Token", "SDFT") {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         // Initial supply of 1,000,000 tokens are given to msg.sender
         _mint(msg.sender, 1e24);
     }
